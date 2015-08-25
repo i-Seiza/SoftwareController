@@ -4,7 +4,7 @@
 #include "FileIO.h"
 #include <locale>
 
-namespace fs = boost::filesystem;
+//namespace fs = boost::filesystem;
 
 CFileIO::CFileIO(void)
 {
@@ -16,78 +16,117 @@ CFileIO::~CFileIO(void)
 
 
 // ファイルを開く
-std::vector< std::string> CFileIO::Read( const char *path )
+std::vector< std::wstring> CFileIO::Read( const char *path )
 {
+	std::vector< std::wstring > vec;
+
+#if 0
 	//ifstreamの場合
-	std::ifstream ifs( path );
+	std::ifstream ifs(path);
 
 	std::locale::global(std::locale("japanese"));
 	_tsetlocale(LC_ALL, _T("Japanese"));
 
-	std::string str;
-	std::vector< std::string > vec;
+	std::wstring str;
 
-	if(ifs.fail()) {
+	if (ifs.fail()) {
 		return vec;
 	}
 
-	while(getline(ifs, str)) {
-		vec.push_back( str );
+	while (getline(ifs, str)) {
+		vec.push_back(str);
 	}
+#endif // 0
+
 	return vec;
+
 }
 
-void CFileIO::Write( std::string data, std::ios_base::open_mode mode, const char *path )
+std::vector<tstring> CFileIO::Read(const TCHAR * path)
 {
+	std::locale::global(std::locale("japanese"));
+	_tsetlocale(LC_ALL, _T("Japanese"));
+	std::locale::global(std::locale("japanese_japan.20932"));
+
+	std::wstring str;
+
+	std::wifstream in(path);
+	std::getline(in, str);
+
+	return std::vector<tstring>();
+}
+
+void CFileIO::Write( std::wstring data, std::ios_base::open_mode mode, const char *path )
+{
+#if 0
 	std::ofstream ofs;
 	ofs.open( path, mode );
 	ofs << data << std::endl;
 	ofs.close();
+#endif
 }
 
+std::vector<std::tr2::sys::path> CFileIO::FindFile(const std::tr2::sys::path path, const std::tr2::sys::path name)
+{
+	std::vector<std::tr2::sys::path> list;
+	std::tr2::sys::recursive_directory_iterator last;
+
+	for (std::tr2::sys::recursive_directory_iterator it(path); it != last; ++it) {
+		if (std::tr2::sys::is_regular_file(it->path())) { // ファイルなら...
+			list.push_back(*it);
+		}
+	};
+
+	return list;
+}
+
+std::vector<std::wstring> CFileIO::FindFile(const wchar_t *path, const wchar_t *name)
+{
+	std::vector<std::tr2::sys::path> list = FindFile(std::tr2::sys::path(path), std::tr2::sys::path(name));
+	std::vector<std::wstring> vec;
+
+	for (auto d : list)
+	{
+		vec.push_back(d.wstring());
+	}
+
+	return vec;
+}
 std::vector<std::string> CFileIO::FindFile( const char *path, const char *name )
 {
-	CFileFind filefind;
-	BOOL bNext = FALSE;
+	std::vector<std::tr2::sys::path> list = FindFile(std::tr2::sys::path(path), std::tr2::sys::path(name));
 	std::vector<std::string> vec;
 
-	// 指定したファイルまたはフォルダが存在しない場合は抜ける
-	if( !boost::filesystem::exists( path ))	return vec;
-
-	// 指定したものはファイルか？
-	if( !boost::filesystem::is_directory( path ))	return vec;
-
-	std::string str = std::string( path ) + std::string( "\\*.*" );
-
-	if( filefind.FindFile( str.c_str() ) )
+	for (auto d : list)
 	{
-		
-		do
-		{
-			bNext = filefind.FindNextFile();
+		vec.push_back(d.string());
+	}
 
-			TRACE("%s : %s\n", filefind.GetFileName().GetBuffer(), filefind.GetFilePath().GetBuffer() );
+	return vec;
+}
 
-			if( filefind.IsDots() || filefind.GetFileName() == ".svn" || filefind.GetFileName() == ".git" ) {
-				continue;
-			}
-			else if( filefind.IsDirectory() ) {
-				std::vector<std::string> add = FindFile( filefind.GetFilePath().GetBuffer(), name );
-				std::vector<std::string>::iterator it = add.begin();
-				while( it != add.end() )
-				{
-					vec.push_back( *it );
-					it++;
-				}
+std::vector<std::tr2::sys::path> CFileIO::FindFolder(const std::tr2::sys::path path, const std::tr2::sys::path name)
+{
+	std::vector<std::tr2::sys::path> list;
+	std::tr2::sys::recursive_directory_iterator last;
 
-			} else if( filefind.GetFileName().Compare( name ) == 0 ) {
-				vec.push_back( filefind.GetFilePath().GetBuffer() );
-			}
+	for (std::tr2::sys::recursive_directory_iterator it(path); it != last; ++it) {
+		if (std::tr2::sys::is_directory(it->path())) { // ディレクトリなら...
+			list.push_back(*it);
+		}
+	};
 
-		}while( bNext );
+	return list;
+}
 
-			
-		filefind.Close();
+std::vector<std::wstring> CFileIO::FindFolder(const wchar_t *path, const wchar_t *name)
+{
+	std::vector<std::tr2::sys::path> list = FindFolder(std::tr2::sys::path(path), std::tr2::sys::path(name));
+	std::vector<std::wstring> vec;
+
+	for (auto d : list)
+	{
+		vec.push_back(d.wstring());
 	}
 
 	return vec;
@@ -95,22 +134,12 @@ std::vector<std::string> CFileIO::FindFile( const char *path, const char *name )
 
 std::vector<std::string> CFileIO::FindFolder( const char *path, const char *name )
 {
+	std::vector<std::tr2::sys::path> list = FindFile(std::tr2::sys::path(path), std::tr2::sys::path(name));
 	std::vector<std::string> vec;
 
-
-	// 指定したファイルまたはフォルダが存在しない場合は抜ける
-	if( !boost::filesystem::exists( path ))	return vec;
-
-	// 指定したものはファイルか？
-	if( !boost::filesystem::is_directory( path ))	return vec;
-
-	const fs::path fsPath( path );
-	BOOST_FOREACH(const fs::path& p, std::make_pair(fs::recursive_directory_iterator(fsPath),
-													fs::recursive_directory_iterator())) {
-		if ( fs::is_directory(p) && p.filename() == name )
-		{
-			vec.push_back( p.string() );
-		}
+	for (auto d : list)
+	{
+		vec.push_back(d.string());
 	}
 
 	return vec;
