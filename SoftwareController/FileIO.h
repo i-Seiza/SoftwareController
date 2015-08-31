@@ -10,10 +10,13 @@ public:
 	~CFileIO(void);
 
 public:
-	std::vector< std::wstring>	Read(const char *path);	// ファイルを読む
-	//std::vector< std::wstring>	Read(const TCHAR *path);	// ファイルを読む
-	std::vector<tstring>	Read(const TCHAR *path);	// ファイルを読む
-	void						Write( std::wstring data, std::ios_base::open_mode mode, const char *path );
+
+	// ファイルを読む
+	std::vector<std::string>	Read(const char *path);
+	std::vector<std::wstring>	Read(const wchar_t *path);
+
+	void	Write( std::string data, std::ios_base::open_mode mode, const char *path );
+	void	Write(std::wstring data, std::ios_base::open_mode mode, const wchar_t *path);
 
 	std::vector<std::tr2::sys::path>	FindFile(const std::tr2::sys::path path, const std::tr2::sys::path name);
 	std::vector<std::wstring>			FindFile(const wchar_t * path, const wchar_t * name);

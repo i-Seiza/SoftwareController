@@ -1,10 +1,7 @@
 #include "StdAfx.h"
 
-
 #include "FileIO.h"
-#include <locale>
 
-//namespace fs = boost::filesystem;
 
 CFileIO::CFileIO(void)
 {
@@ -16,54 +13,47 @@ CFileIO::~CFileIO(void)
 
 
 // ファイルを開く
-std::vector< std::wstring> CFileIO::Read( const char *path )
+std::vector<std::string> CFileIO::Read( const char *path )
+{
+	std::vector< std::string > vec;
+
+	std::ifstream is(path);
+
+	for (std::string line; std::getline(is, line); )
+	{
+		vec.push_back(line);
+	}
+
+	return vec;
+}
+std::vector<std::wstring> CFileIO::Read(const wchar_t *path)
 {
 	std::vector< std::wstring > vec;
 
-#if 0
-	//ifstreamの場合
-	std::ifstream ifs(path);
+	std::wifstream is(path);
 
-	std::locale::global(std::locale("japanese"));
-	_tsetlocale(LC_ALL, _T("Japanese"));
-
-	std::wstring str;
-
-	if (ifs.fail()) {
-		return vec;
+	for (std::wstring line; std::getline(is, line); )
+	{
+		vec.push_back(line);
 	}
-
-	while (getline(ifs, str)) {
-		vec.push_back(str);
-	}
-#endif // 0
 
 	return vec;
-
 }
 
-std::vector<tstring> CFileIO::Read(const TCHAR * path)
+void CFileIO::Write( std::string data, std::ios_base::open_mode mode, const char *path )
 {
-	std::locale::global(std::locale("japanese"));
-	_tsetlocale(LC_ALL, _T("Japanese"));
-	std::locale::global(std::locale("japanese_japan.20932"));
-
-	std::wstring str;
-
-	std::wifstream in(path);
-	std::getline(in, str);
-
-	return std::vector<tstring>();
-}
-
-void CFileIO::Write( std::wstring data, std::ios_base::open_mode mode, const char *path )
-{
-#if 0
 	std::ofstream ofs;
 	ofs.open( path, mode );
 	ofs << data << std::endl;
 	ofs.close();
-#endif
+}
+
+void CFileIO::Write(std::wstring data, std::ios_base::open_mode mode, const wchar_t *path)
+{
+	std::wofstream ofs;
+	ofs.open(path, mode);
+	ofs << data << std::endl;
+	ofs.close();
 }
 
 std::vector<std::tr2::sys::path> CFileIO::FindFile(const std::tr2::sys::path path, const std::tr2::sys::path name)

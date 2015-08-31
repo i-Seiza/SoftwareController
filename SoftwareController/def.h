@@ -4,28 +4,19 @@
 #include <windows.h>
 #include <fstream>
 #include <sstream>
-#include <iostream>
 #include <string>
 #include <vector>
 #include <map>
-
-#include <Shlwapi.h>
-#pragma comment(lib, "shlwapi.lib")
-
-#include "resource.h"
-#include "Log.h"
-
-#include <boost/algorithm/string.hpp>
-#include <boost/filesystem.hpp>
-#include <boost/filesystem/operations.hpp>
-#include <boost/foreach.hpp>
-#include <boost/regex.hpp>
 
 
 #include <iomanip>
 #include <cstdlib>
 
+#include <filesystem>
+
 #include <algorithm>
+
+typedef std::basic_string<TCHAR> tstring;
 
 
 #define MAX_LEN 256

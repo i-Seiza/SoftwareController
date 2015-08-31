@@ -2,28 +2,26 @@
 #include "Inifile.h"
 #include "FileIO.h"
 
-#include <boost/tokenizer.hpp>
-#include <boost/foreach.hpp>
-#include <boost/lexical_cast.hpp>
-#include <boost/regex.hpp>
-
-#include <boost/xpressive/xpressive.hpp>
 
 CInifile::CInifile(void)
 {
 	// アプリ名を取得
-	DWORD rc = GetModuleFileName( NULL, m_sIniFile, MAX_PATH );
-	
+#ifdef _UNICODE
+	DWORD rc = GetModuleFileNameW(NULL, m_sIniFile, MAX_PATH);
+#else
+	DWORD rc = GetModuleFileName(NULL, m_sIniFile, MAX_PATH);
+#endif
+
 	// iniファイル名取得
+	std::experimental::filesystem::path p(m_sIniFile);
+	std::experimental::filesystem::path extension = std::experimental::filesystem::path(m_sIniFile).extension();
+	p.replace_extension(".ini");
 
-	for( size_t i = strlen(m_sIniFile) - 1 ; i >= 0 ; i-- )
-	{
-		if( m_sIniFile[i] != '.' ) continue;
-		sprintf_s( &m_sIniFile[i], MAX_PATH, ".ini" );
-		break;
-	}
-
-	memset( m_sContent, sizeof(m_sContent) , '\0' );
+#ifdef _UNICODE
+	swprintf_s( m_sIniFile, MAX_PATH, p.wstring().c_str());
+#else
+	sprintf_s(m_sIniFile, MAX_PATH, p.wstring().c_str());
+#endif
 }
 
 CInifile::~CInifile(void)
@@ -34,124 +32,161 @@ CInifile::~CInifile(void)
 
 
 // inifileを読む
-void CInifile::ReadInifile( const char *sName, const char *sKey, const char *sDefault )
+void CInifile::ReadInifile( const TCHAR *sName, const TCHAR *sKey, const TCHAR *sDefault )
 {
-	// 
+#ifdef _UNICODE
+	GetPrivateProfileStringW(sName, sKey, sDefault, m_sContent, MAX_PATH, m_sIniFile);
+#else
 	GetPrivateProfileString( sName, sKey, sDefault, m_sContent, MAX_PATH, m_sIniFile );
+#endif
 
 }
 
 
-char*	CInifile::GetContents()
+TCHAR*	CInifile::GetContents()
 {
 	return m_sContent;
 }
 
 /////////////////////////////////////
 // inifileを書く
-void CInifile::WriteInifile( const char *sName, const char *sKey, const char *sContent )
+void CInifile::WriteInifile( const TCHAR *sName, const TCHAR *sKey, const TCHAR *sContent )
 {
-	// 
-	WritePrivateProfileString( sName, sKey, sContent, m_sIniFile );
+#ifdef _UNICODE
+	WritePrivateProfileStringW(sName, sKey, sContent, m_sIniFile);
+#else
+	WritePrivateProfileString(sName, sKey, sContent, m_sIniFile);
+#endif
 
 }
 /////////////////////////////////////
 // inifile名を取得
-const char* CInifile::GetInifileName()
+const TCHAR* CInifile::GetInifileName()
 {
 	return m_sIniFile;
 }
+
 /////////////////////////////////////
 // inifile情報を取得する（生データ）
 void CInifile::ReadData()
 {
 	CFileIO io;
-	std::vector< std::string > vec;
-	vec = io.Read( m_sIniFile );
-	std::vector< std::string >::iterator it = vec.begin();
+	m_vContent = io.Read(m_sIniFile);
 
-	do
+	std::vector<tstring> keys = GetKeyName();
+	std::vector<KEY_DATA> datas = GetKeyData();
+
+	for (auto key : keys)
 	{
-		boost::regex re( "\\[(.*)\\]" );
-		do{
-			if( boost::regex_match( *it, re ) )	break;
-		}while( ++it != vec.end() );
-		
-		if ( it == vec.end() )	break;
-		CheckKey( it, vec.end()	);
-	
-	}while( it++ != vec.end() );
-}
-
-void CInifile::CheckKey( std::vector< std::string >::iterator it, std::vector< std::string >::iterator end )
-{
-	boost::regex re( "\\[(.*)\\]" );
-	do{
-		if( boost::regex_match( *it, re ) )	break;
-	}while( ++it != end );
-
-
-	boost::smatch result;
-	boost::regex_search( std::string::const_iterator((*it).begin()), std::string::const_iterator((*it).end()), result, re );
-	m_data.insert( std::make_pair(result.str(1), CheckName( ++it, end ) ));
-
-}
-
-std::vector< KEY_DATA > CInifile::CheckName( std::vector< std::string >::iterator it, std::vector< std::string >::iterator end )
-{
-	KEY_DATA	key;
-	std::vector< KEY_DATA >	data;
-
-	boost::regex rKey( "\\[(.*)\\]" );
-	do{
-		if( boost::regex_match( *it, rKey ) )	break;
-		boost::regex re( "^\\s*(.*)\\s*\\=\\s*(.*)$" );
-		if( boost::regex_match( *it, re )) 
+		for ( auto data : datas)
 		{
-			boost::smatch result;
-			boost::regex_search( std::string::const_iterator((*it).begin()), std::string::const_iterator((*it).end()), result, re );
-			key.sKey = result.str(1);
-			key.sData = result.str(2);
-			data.push_back( key );
+			ReadInifile(key.c_str(), data.sKey.c_str(), _T(""));
+			if (tstring(GetContents()).size())
+			{
+				DATA::iterator it = m_data.find(key);
+				if (it != m_data.end())
+				{
+					(*it).second.push_back(data);
+				}
+				else
+				{
+					m_data.insert(std::make_pair(key, std::vector<KEY_DATA>{ data }));
+				}
+			}
 		}
-
-	}while( ++it != end );
-
-	return data;
+	}
 }
 
-std::map< std::string, std::vector< KEY_DATA >> CInifile::GetData()
+std::vector<tstring> CInifile::GetKeyName()
+{
+	std::vector<tstring> keys;
+	for (auto line : m_vContent)
+	{
+		boost::optional<tstring> key = GetKeyName(line);
+		if (key.is_initialized())
+		{
+			keys.push_back(*key);
+		}
+	}
+
+	return keys;
+}
+
+boost::optional<tstring> CInifile::GetKeyName(tstring line)
+{
+#if UNICODE
+	std::wregex re;
+	std::wsmatch result;
+#else
+	std::regex re;
+	std::smatch result;
+#endif
+
+	re = _T("\\[(.*)\\]");
+	boost::optional<tstring> keyName = boost::none;
+	if (std::regex_match(line, result, re))
+	{
+		keyName = result.str(1);
+	}
+	return keyName;
+}
+
+std::vector<KEY_DATA> CInifile::GetKeyData()
+{
+	std::vector <KEY_DATA> datas;
+	for (auto line : m_vContent)
+	{
+		boost::optional<KEY_DATA> data = GetKeyData(line);
+		if (data.is_initialized())
+		{
+			datas.push_back(*data);
+		}
+	}
+	return datas;
+}
+
+boost::optional<KEY_DATA> CInifile::GetKeyData(tstring line)
+{
+#if UNICODE
+	std::wregex re;
+	std::wsmatch result;
+#else
+	std::regex re;
+	std::smatch result;
+#endif
+
+	re = _T("^\\s*(.*)\\s*\\=\\s*(.*)$");
+	boost::optional<KEY_DATA> keyData= boost::none;
+
+	if (std::regex_match(line, result, re))
+	{
+		KEY_DATA data;
+		data.sKey = result.str(1);
+		data.sData = result.str(2);
+		keyData = data;
+	}
+
+	return keyData;
+}
+
+CInifile::DATA CInifile::GetData()
 {
 	return m_data;
 }
 
 /////////////////////////////////////
 // inifile情報を書き込みする（生データ）
-void CInifile::WriteData(std::map< std::string, std::vector< KEY_DATA >> mData)
+void CInifile::WriteData(DATA mData)
 {
-	std::map< std::string, std::vector< KEY_DATA >>::iterator mIt = mData.begin();
-	std::vector< KEY_DATA >::iterator vIt;
 	CFileIO io;
-	io.Write( "", std::ios::out, m_sIniFile );
-
-	while( mIt != mData.end() )
+	for (auto data : mData)
 	{
-		io.Write( "[" + (*mIt).first + "]", std::ios::out | std::ios::app, m_sIniFile );
-		io.Write( "", std::ios::out | std::ios::app, m_sIniFile );
+		io.Write(_T("[") + data.first + _T("]"), std::ios::out | std::ios::app, m_sIniFile);
 
-		vIt = (*mIt).second.begin();
-		while( vIt != (*mIt).second.end() )
+		for (auto content : data.second)
 		{
-			io.Write( (*vIt).sKey + " = " + (*vIt).sData, std::ios::out | std::ios::app, m_sIniFile );
-			vIt++;
+			io.Write(content.sKey + _T("=") + content.sData, std::ios::out | std::ios::app, m_sIniFile);
 		}
-		mIt++;
-
-		io.Write( "", std::ios::out | std::ios::app, m_sIniFile );
+		io.Write(_T(""), std::ios::out | std::ios::app, m_sIniFile);
 	}
-
-
-
-
-
 }

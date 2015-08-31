@@ -2,43 +2,52 @@
 
 // iniファイルのクラス
 #include "def.h"
+#include <boost/optional.hpp>
+
 
 typedef struct KEY_DATA{
-	std::string	sKey;
-	std::string	sData;
+	tstring	sKey;
+	tstring	sData;
 } KEY_DATA;
 
 
 
 class CInifile
 {
+	typedef std::map<tstring, std::vector<KEY_DATA>> DATA;
+
 public:
 	CInifile(void);
 	~CInifile(void);
 
 private:
 
-	char	m_sIniFile[MAX_PATH];
-	char	m_sContent[MAX_PATH];
-	std::map< std::string, std::vector< KEY_DATA >>	m_data;
+	TCHAR	m_sIniFile[MAX_PATH];
+	TCHAR	m_sContent[MAX_PATH];
+	DATA	m_data;
+
+	std::vector<tstring> m_vContent;
 
 private:
 
 
-	void CInifile::CheckKey( std::vector< std::string >::iterator it, std::vector< std::string >::iterator end );
-	std::vector< KEY_DATA >	CInifile::CheckName( std::vector< std::string >::iterator it, std::vector< std::string >::iterator end );
+
+	std::vector<tstring>		GetKeyName();
+	boost::optional<tstring>	GetKeyName(tstring line);
+	std::vector<KEY_DATA>		GetKeyData();
+	boost::optional<KEY_DATA>	GetKeyData(tstring line);
+
 
 public:
 	
-	void		ReadInifile( const char *sName, const char *sKey, const char *sDefault );
-	void		WriteInifile( const char *sName, const char *sKey, const char *sContent );
-	char*		GetContents();
-	const char* GetInifileName();
+	void		ReadInifile( const TCHAR *sName, const TCHAR *sKey, const TCHAR *sDefault );
+	void		WriteInifile( const TCHAR *sName, const TCHAR *sKey, const TCHAR *sContent );
+
+	TCHAR*		GetContents();
+	const TCHAR*	GetInifileName();
 	void		ReadData();
-	void		WriteData(std::map< std::string, std::vector< KEY_DATA >> mData);
-	std::map< std::string, std::vector< KEY_DATA >> GetData();
-
-
+	void		WriteData(DATA mData);
+	DATA		GetData();
 
 
 };
