@@ -15,6 +15,7 @@
 #include <filesystem>
 
 #include <algorithm>
+#include <regex>
 
 typedef std::basic_string<TCHAR> tstring;
 

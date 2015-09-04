@@ -1,5 +1,6 @@
 #pragma once
 
+#include "def.h"
 
 class CLog
 {
@@ -11,7 +12,7 @@ private:
 	bool IsWrite();
 
 public:
-	void Write( const std::string sLog );
-	void Write( const std::string sClass, const int eType, const std::string sContents );
+	void Write( const tstring sLog );
+	void Write( const tstring sClass, const int eType, const tstring sContents );
 };
 

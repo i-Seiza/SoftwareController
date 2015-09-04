@@ -6,22 +6,14 @@
 CInifile::CInifile(void)
 {
 	// アプリ名を取得
-#ifdef _UNICODE
-	DWORD rc = GetModuleFileNameW(NULL, m_sIniFile, MAX_PATH);
-#else
 	DWORD rc = GetModuleFileName(NULL, m_sIniFile, MAX_PATH);
-#endif
 
 	// iniファイル名取得
 	std::experimental::filesystem::path p(m_sIniFile);
 	std::experimental::filesystem::path extension = std::experimental::filesystem::path(m_sIniFile).extension();
 	p.replace_extension(".ini");
 
-#ifdef _UNICODE
-	swprintf_s( m_sIniFile, MAX_PATH, p.wstring().c_str());
-#else
-	sprintf_s(m_sIniFile, MAX_PATH, p.wstring().c_str());
-#endif
+	_tprintf_s( m_sIniFile, MAX_PATH, p.wstring().c_str());
 }
 
 CInifile::~CInifile(void)
@@ -34,11 +26,7 @@ CInifile::~CInifile(void)
 // inifileを読む
 void CInifile::ReadInifile( const TCHAR *sName, const TCHAR *sKey, const TCHAR *sDefault )
 {
-#ifdef _UNICODE
-	GetPrivateProfileStringW(sName, sKey, sDefault, m_sContent, MAX_PATH, m_sIniFile);
-#else
-	GetPrivateProfileString( sName, sKey, sDefault, m_sContent, MAX_PATH, m_sIniFile );
-#endif
+	GetPrivateProfileString(sName, sKey, sDefault, m_sContent, MAX_PATH, m_sIniFile);
 
 }
 
@@ -52,11 +40,7 @@ TCHAR*	CInifile::GetContents()
 // inifileを書く
 void CInifile::WriteInifile( const TCHAR *sName, const TCHAR *sKey, const TCHAR *sContent )
 {
-#ifdef _UNICODE
-	WritePrivateProfileStringW(sName, sKey, sContent, m_sIniFile);
-#else
 	WritePrivateProfileString(sName, sKey, sContent, m_sIniFile);
-#endif
 
 }
 /////////////////////////////////////
