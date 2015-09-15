@@ -15,19 +15,18 @@ CArgument::~CArgument(void)
 
 ///////////////////////////////
 // ƒNƒ‰ƒX‚ğæ“¾
-CArgBase* CArgument::GetClass( const char *path )
+CArgBase* CArgument::GetClass( const tstring path )
 {
-	CArgBase	*pBase = NULL;
+	auto it = ARG_MAP.find(path);
+	if (it != ARG_MAP.end())	return it->second;
 
-	if(!_stricmp( path, sArgKey[_START_UP] ) )						pBase = new CStartUp();
-	
-	return pBase;
+	return nullptr;
 }
 
 
 ///////////////////////////////
 // ˆ—‚ğs‚¤
-_E_ERROR CArgument::Open( const char *sKey, const _TCHAR *sContents, std::vector< std::string > argv )
+_E_ERROR CArgument::Open( const tstring sKey, const _TCHAR *sContents, std::vector< tstring > argv )
 {
 	CArgBase *pBase = GetClass( sKey );
 	if( pBase == NULL )	return _E_NO_KEY;

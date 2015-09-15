@@ -12,14 +12,6 @@ enum _E_ARG_KEY
 
 };
 
-
-const _TCHAR sArgKey[][256] = 
-{
-	"start_up",
-};
-
-
-
 class CArgBase
 {
 public:
@@ -27,16 +19,16 @@ public:
 	~CArgBase(void);
 private:
 	
-	std::string	m_sReadedIniData;
+	tstring	m_sReadedIniData;
 
 protected:
 
 	bool		ReadInifile( const _TCHAR *sContents, const _TCHAR *sKey );
-	std::string GetIniData();
+	tstring		GetIniData();
 
-	std::string Replace( std::string str1, std::string src, std::string dest );
+	tstring		Replace( tstring str1, tstring src, tstring dest );
 
 public:
 
-	virtual _E_ERROR Execute( const _TCHAR *sContents,  std::vector< std::string > argv );
+	virtual		_E_ERROR Execute( const _TCHAR *sContents,  std::vector< tstring > argv );
 };
