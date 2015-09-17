@@ -22,8 +22,9 @@ public:
 
 private:
 
-	TCHAR	m_sIniFile[MAX_PATH];
-	TCHAR	m_sContent[MAX_PATH];
+	std::experimental::filesystem::path m_sIniFile;
+	boost::optional<tstring>	m_sContent;
+	tstring						m_default;
 	DATA	m_data;
 
 	std::vector<tstring> m_vContent;
@@ -41,10 +42,12 @@ private:
 public:
 	
 	void		ReadInifile( const TCHAR *sName, const TCHAR *sKey, const TCHAR *sDefault );
+	bool IsSccuess();
 	void		WriteInifile( const TCHAR *sName, const TCHAR *sKey, const TCHAR *sContent );
 
-	TCHAR*		GetContents();
+	tstring		GetContents();
 	const TCHAR*	GetInifileName();
+	std::experimental::filesystem::path GetPath();
 	void		ReadData();
 	void		WriteData(DATA mData);
 	DATA		GetData();

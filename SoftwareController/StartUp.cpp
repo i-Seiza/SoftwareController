@@ -14,7 +14,7 @@ CStartUp::~CStartUp(void)
 }
 
 ///////////////////////////////
-_E_ERROR CStartUp::Execute( const _TCHAR *sContents,  std::vector< std::string > argv )
+_E_ERROR CStartUp::Execute( const _TCHAR *sContents,  std::vector< tstring > argv )
 {
 	// 常に起動するアプリケーション
 	Execute( sContents, KEYWORD_STARTUP.at(_ALWAYS) );

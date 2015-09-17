@@ -3,17 +3,18 @@
 #include "FileIO.h"
 
 
-CInifile::CInifile(void)
+CInifile::CInifile(void):
+m_sContent(boost::none),
+m_default(tstring())
 {
 	// アプリ名を取得
-	DWORD rc = GetModuleFileName(NULL, m_sIniFile, MAX_PATH);
+	TCHAR exe[MAX_PATH];
+	DWORD rc = GetModuleFileName(NULL, exe, MAX_PATH);
 
 	// iniファイル名取得
-	std::experimental::filesystem::path p(m_sIniFile);
-	std::experimental::filesystem::path extension = std::experimental::filesystem::path(m_sIniFile).extension();
-	p.replace_extension(".ini");
-
-	_tprintf_s( m_sIniFile, MAX_PATH, p.wstring().c_str());
+	m_sIniFile = exe;
+	std::experimental::filesystem::path extension = std::experimental::filesystem::path(exe).extension();
+	m_sIniFile.replace_extension(".ini");
 }
 
 CInifile::~CInifile(void)
@@ -21,33 +22,58 @@ CInifile::~CInifile(void)
 }
 
 /////////////////////////////////////
-
-
-// inifileを読む
-void CInifile::ReadInifile( const TCHAR *sName, const TCHAR *sKey, const TCHAR *sDefault )
+/* inifileを読む
+AppName: セクション名
+sKey： キー名
+*/
+void CInifile::ReadInifile( const TCHAR *AppName, const TCHAR *sKey, const TCHAR *sDefault )
 {
-	GetPrivateProfileString(sName, sKey, sDefault, m_sContent, MAX_PATH, m_sIniFile);
+	m_default = sDefault;
 
+	TCHAR content[MAX_PATH];
+	DWORD len = GetPrivateProfileString(AppName, sKey, sDefault, content, MAX_PATH, m_sIniFile.c_str());
+	if (len > 0)
+	{
+		m_sContent = content;
+	}
 }
 
-
-TCHAR*	CInifile::GetContents()
+/*
+Iniファイル読み込み成功かどうか
+true: 成功
+false: 失敗
+*/
+bool CInifile::IsSccuess()
 {
-	return m_sContent;
+	return m_sContent.is_initialized();
+}
+
+/*
+Iniファイル読込結果を反映する
+読み込み結果が失敗している場合はReadIniFileで指定されたdefault値を反映する
+*/
+tstring	CInifile::GetContents()
+{
+	return m_sContent.get_value_or(m_default);
 }
 
 /////////////////////////////////////
 // inifileを書く
 void CInifile::WriteInifile( const TCHAR *sName, const TCHAR *sKey, const TCHAR *sContent )
 {
-	WritePrivateProfileString(sName, sKey, sContent, m_sIniFile);
+	WritePrivateProfileString(sName, sKey, sContent, m_sIniFile.c_str());
 
 }
 /////////////////////////////////////
 // inifile名を取得
 const TCHAR* CInifile::GetInifileName()
 {
-	return m_sIniFile;
+	return m_sIniFile.c_str();
+}
+
+std::experimental::filesystem::path CInifile::GetPath()
+{
+	return m_sIniFile.parent_path();
 }
 
 /////////////////////////////////////
@@ -55,7 +81,7 @@ const TCHAR* CInifile::GetInifileName()
 void CInifile::ReadData()
 {
 	CFileIO io;
-	m_vContent = io.Read(m_sIniFile);
+	m_vContent = io.Read(GetInifileName());
 
 	std::vector<tstring> keys = GetKeyName();
 	std::vector<KEY_DATA> datas = GetKeyData();
@@ -165,12 +191,12 @@ void CInifile::WriteData(DATA mData)
 	CFileIO io;
 	for (auto data : mData)
 	{
-		io.Write(_T("[") + data.first + _T("]"), std::ios::out | std::ios::app, m_sIniFile);
+		io.Write(_T("[") + data.first + _T("]"), std::ios::out | std::ios::app, GetInifileName());
 
 		for (auto content : data.second)
 		{
-			io.Write(content.sKey + _T("=") + content.sData, std::ios::out | std::ios::app, m_sIniFile);
+			io.Write(content.sKey + _T("=") + content.sData, std::ios::out | std::ios::app, GetInifileName());
 		}
-		io.Write(_T(""), std::ios::out | std::ios::app, m_sIniFile);
+		io.Write(_T(""), std::ios::out | std::ios::app, GetInifileName());
 	}
 }

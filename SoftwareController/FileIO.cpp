@@ -42,6 +42,13 @@ std::vector<std::wstring> CFileIO::Read(const wchar_t *path)
 
 void CFileIO::Write( std::string data, std::ios_base::open_mode mode, const char *path )
 {
+	/*
+	out: 書き込み専用に開く。デフォルト。
+	app: 追記用に開く。
+	ate: ファイルを開くと、自動的に末尾に移動する。
+	trunc: ファイルを開くと、以前の内容を全て削除する。
+	binary: 特殊な文字を置換しない。
+	*/
 	std::ofstream ofs;
 	ofs.open( path, mode );
 	ofs << data << std::endl;

@@ -18,7 +18,10 @@ CArgument::~CArgument(void)
 CArgBase* CArgument::GetClass( const tstring path )
 {
 	auto it = ARG_MAP.find(path);
-	if (it != ARG_MAP.end())	return it->second;
+	if (it != ARG_MAP.end())
+	{
+		return it->second;
+	}
 
 	return nullptr;
 }
@@ -28,11 +31,7 @@ CArgBase* CArgument::GetClass( const tstring path )
 // ˆ—‚ğs‚¤
 _E_ERROR CArgument::Open( const tstring sKey, const _TCHAR *sContents, std::vector< tstring > argv )
 {
-	CArgBase *pBase = GetClass( sKey );
+	std::unique_ptr<CArgBase> pBase(GetClass( sKey ));
 	if( pBase == NULL )	return _E_NO_KEY;
-
-	_E_ERROR ret = pBase->Execute( sContents, argv );
-
-	delete pBase;
-	return ret;
+	return pBase->Execute(sContents, argv);
 }

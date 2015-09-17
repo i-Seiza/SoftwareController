@@ -6,6 +6,7 @@
 enum _E_ARG_KEY
 {
 	_START_UP,		// スタートアップ
+	_GIT_LOG,		// git logコマンドを実行する
 
 
 	_KEY_FIN,

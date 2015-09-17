@@ -62,6 +62,6 @@ private:
 
 
 public:
-	_E_ERROR Execute( const _TCHAR *sContents,  std::vector< std::string > argv );
+	_E_ERROR Execute(const _TCHAR *sContents, std::vector< tstring > argv);
 
 };

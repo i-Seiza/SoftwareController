@@ -3,59 +3,30 @@
 
 #include "stdafx.h"
 #include "def.h"
-#include "SoftwareController.h"
+#include "Inifile.h"
+#include "CommandBase.h"
+
+#include "FileIO.h"
 #include "Argument.h"
-#include <boost/lexical_cast.hpp>
-
-
-#ifdef _DEBUG
-#define new DEBUG_NEW
-#endif
-
-
-// 唯一のアプリケーション オブジェクトです。
-
-CWinApp theApp;
-
-using namespace std;
 
 int _tmain(int argc, TCHAR* argv[], TCHAR* envp[])
 {
-	int nRetCode = 0;
-
-	// MFC を初期化して、エラーの場合は結果を印刷します。
-	if (!AfxWinInit(::GetModuleHandle(NULL), NULL, ::GetCommandLine(), 0))
+	std::wstring numericalPassword;
+	if (numericalPassword.empty())
 	{
-		// TODO: 必要に応じてエラー コードを変更してください。
-		_tprintf(_T("致命的なエラー: MFC の初期化ができませんでした。\n"));
-		nRetCode = 1;
+		int i = 0;
 	}
-	else
+	std::vector<tstring> v;
+	for (int i = 0; i < argc; i++)
 	{
-		// TODO: アプリケーションの動作を記述するコードをここに挿入してください。
-		std::wcout.imbue(std::locale("japanese"));
-		// 引数がないとエラーにする
-		if( argc < 2 )
-		{
-			return -1;
-		}
-
-		CInifile ini;
-
-		// 引数を読む
-		ini.ReadInifile( "argument", argv[1], "" );
-	
-		std::vector< std::string > vec;
-		for ( int i = 0; i < argc; i++ )
-		{
-			vec.push_back( argv[i] );
-		}
-
-
-		// 引数付き処理
-		CArgument arg;
-		arg.Open( argv[1], ini.GetContents(), vec );
+		v.push_back(argv[i]);
 	}
 
-	return nRetCode;
+	//CommandBase c;
+	//c.Execute(argv[1], v);
+	CArgument arg;
+	arg.Open(argv[1], _T("argument"), v);
+
+	return 0;
 }
+
