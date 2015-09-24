@@ -7,6 +7,9 @@
 
 CommandBase::CommandBase()
 {
+	path.reset(new PathCommand(_T("")));
+	main.reset(new MainCommand(_T("")));
+	close.reset(new CloseCommand(GetResultFile()));
 }
 
 
@@ -62,26 +65,10 @@ _E_ERROR CommandBase::ExecuteCommand()
 ///////////////////////////
 tstring CommandBase::GetCommand()
 {
-	tstring dir = _T("dir > ") + tstring(GetResultFile());
-	return dir;
-}
-
-/*
-パス情報をiniファイルから取得する
-カラム： "path"
-sKey: 取得したいパス情報のキー名
-*/
-boost::optional<tstring> CommandBase::GetPathCommand(const TCHAR * sKey)
-{
-	CInifile ini;
-	ini.ReadInifile(_T("path"), sKey, _T(""));
-	if (!ini.IsSccuess())	return boost::none;
-
 	tstring command;
-	command.append(_T("cd "));
-	command.append(ini.GetContents());
-	command.append(_T("\n"));
-
+	command.append(path->GetCommand());
+	command.append(main->GetCommand());
+	command.append(close->GetCommand());
 	return command;
 }
 

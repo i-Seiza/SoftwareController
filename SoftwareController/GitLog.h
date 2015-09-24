@@ -7,7 +7,6 @@ public:
 	GitLog();
 	~GitLog();
 
-	tstring GetCommand();
 
 };
 

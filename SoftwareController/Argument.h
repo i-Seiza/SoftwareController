@@ -6,12 +6,13 @@
 #include "StartUp.h"
 #include "CommandBase.h"
 #include "GitLog.h"
+#include "DelLog.h"
 
 const std::unordered_map<tstring, CArgBase*> ARG_MAP =
 {
 	{ _T("start_up"), new CStartUp() },
-	{ _T("command"), new CommandBase() },
 	{ _T("git_log"), new GitLog() },
+	{ _T("del_log"), new DelLog() },
 };
 
 
