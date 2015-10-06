@@ -1,81 +1,44 @@
 #pragma once
 #include "ArgBase.h"
+#include "BatchCommand.h"
 
-/*
-	コマンドを実行するクラス
-	-> コマンドを実行するファイルを作成する
-	-> 結果を待機
-	-> 結果を保持
-	 -> 結果をどう使うかは継承先で決める
-*/
-template<class X> class value 
-{
-public:
 
-	value() {}
-	~value() {}
 
-	void set(X v) { data += v; }
-	X get() { return data; }
-
-private:
-	X data;
-};
 
 /*
 パス情報をiniファイルから取得する
 カラム： "path"
 sKey: 取得したいパス情報のキー名
 */
-class PathCommand
+class PathCommand : public BatchCommand
 {
-private:
-	value<tstring> path;
-	bool initialize;
 
 public:
 	PathCommand(){}
 	PathCommand(tstring sKey)
 	{
-		CInifile ini;
-		ini.ReadInifile(_T("path"), sKey.c_str(), _T(""));
-		if (ini.IsSccuess())
-		{
-			path.set(ini.GetContents());
-			initialize = true;
-		}
+		pre = _T("cd ");
+		main = GetValueFromSettingfile(_T("path"), sKey);
+		post = _T("\n");
 	}
 	~PathCommand() {}
-
-	tstring GetCommand()
-	{
-		tstring command;
-		if (initialize)
-		{
-			command.append(_T("cd "));
-			command.append(path.get());
-			command.append(_T("\n"));
-		}
-		return command;
-	}
+	
 };
 
-class MainCommand
+/*
+メインの処理情報をiniファイルから取得する
+カラム： "command1"/"commadn2"/…
+sKey: 取得したいパス情報のキー名
+*/
+class MainCommand : public BatchCommand
 {
 private:
-	value<tstring> main;
-	bool initialize;
 
-
-	boost::optional<tstring> GetCommand(const TCHAR *appName, int nPos)
+	boost::optional<tstring> GetCommandMain(const TCHAR *appName, int nPos)
 	{
 		tstring key;
 		key.append(_T("command"));
-#ifdef _UNICODE
-		key.append(std::to_wstring(nPos));
-#else
-		key.append(std::to_string(nPos));
-#endif
+		key.append(toString(nPos));
 
 		CInifile ini;
 		ini.ReadInifile(appName, key.c_str(), _T(""));
@@ -91,11 +54,11 @@ public:
 		size_t nPos = 1;
 		while (true)
 		{
-			boost::optional<tstring> line = GetCommand(sKey.c_str(), nPos);
+			boost::optional<tstring> line = GetCommandMain(sKey.c_str(), nPos);
 			if (line.is_initialized())
 			{
-				if(!main.get().empty())	main.set(_T("\n"));
-				main.set(*line);
+				if(!main.IsEmpty())	main += _T("\n");
+				main += *line;
 				initialize = true;
 				nPos++;
 			}
@@ -108,46 +71,40 @@ public:
 	}
 	~MainCommand() {}
 
-	tstring GetCommand()
-	{
-		tstring command;
-		if (initialize)
-		{
-			command.append(main.get());
-		}
-		return command;
-	}
 };
 
-class CloseCommand
+/*
+結果ファイル書き出す必要がある場合、結果ファイルを登録する
+*/
+class ResultCommand : public BatchCommand
 {
-private:
-	value<tstring> close;
-	bool initialize;
+public:
+	ResultCommand() {}
+	ResultCommand(tstring sKey)
+	{
+		main = sKey;
+		if (main.size())
+		{
+			post = _T(" > ");
+		}
+	}
+	~ResultCommand() {}
+
+};
+
+
+class ExecuteBase : public CArgBase
+{
+protected:
+	tstring GetResultFile() const;
 
 public:
-	CloseCommand() {}
-	CloseCommand(tstring sKey)
-	{
-		close.set(sKey);
-		initialize = true;
-	}
-	~CloseCommand() {}
 
-	tstring GetCommand()
-	{
-		tstring command;
-		if (initialize)
-		{
-			command.append(_T(" > "));
-			command.append(close.get());
-		}
-		return command;
-	}
+	virtual		_E_ERROR Execute(const _TCHAR *sContents, std::vector< tstring > argv) = 0;
 };
 
 class CommandBase :
-	public CArgBase
+	public ExecuteBase
 {
 public:
 	CommandBase();
@@ -158,12 +115,9 @@ protected:
 
 	std::unique_ptr<PathCommand> path;
 	std::unique_ptr<MainCommand> main;
-	std::unique_ptr<CloseCommand> close;
-
-
+	std::unique_ptr<ResultCommand> result;
 
 	_TCHAR* GetCommandFile() const { return _T("command.bat"); }
-	tstring GetResultFile() const;
 	bool OpenResultFile();
 	_E_ERROR ExecuteCommand();
 	virtual tstring GetCommand();
@@ -173,3 +127,9 @@ public:
 
 };
 
+class ExecuteClipboad : public ExecuteBase
+{
+public:
+	_E_ERROR Execute(const _TCHAR *sContents, std::vector< tstring > argv);
+
+};

@@ -33,20 +33,15 @@ void CLog::Write( const tstring sLog )
 	// ログ出力モードになっているかをチェック
 	if( !IsWrite() )	return;
 	
-
-#ifdef _UNICODE
-	std::wostringstream file;
-#else
-	std::ostringstream file;
-#endif
-
 	// デスクトップに出力
 	TCHAR desktopPath[_MAX_PATH];
 	::SHGetSpecialFolderPath(NULL, desktopPath, CSIDL_DESKTOPDIRECTORY, FALSE);
 
 	// 今日の日付でファイルを作成する
 	tm now = boost::posix_time::to_tm(boost::posix_time::second_clock::local_time());
-	file << desktopPath << _T("\\") << 
+	
+	stringstream file;
+	file << desktopPath << _T("\\") <<
 		now.tm_year + 1970 << 
 		std::setw(2) << now.tm_mon <<
 		std::setw(2) << now.tm_yday << 
@@ -63,12 +58,7 @@ void CLog::Write( const tstring sLog )
 
 void CLog::Write( const tstring sClass, const int eType, const tstring sContents )
 {
-#ifdef _UNICODE
-	std::wostringstream os;
-#else
-	std::ostringstream os;
-#endif
-
+	stringstream os;
 	os << sClass << "[result:" << eType << "]\t" << sContents;
 	Write( os.str() );
 }

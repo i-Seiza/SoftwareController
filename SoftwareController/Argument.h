@@ -11,7 +11,7 @@
 const std::unordered_map<tstring, CArgBase*> ARG_MAP =
 {
 	{ _T("start_up"), new CStartUp() },
-	{ _T("git_log"), new GitLog() },
+	{ _T("git_log"), new GitLogManager() },
 	{ _T("del_log"), new DelLog() },
 };
 

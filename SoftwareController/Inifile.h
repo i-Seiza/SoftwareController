@@ -2,7 +2,6 @@
 
 // iniファイルのクラス
 #include "def.h"
-#include <boost/optional.hpp>
 
 
 typedef struct KEY_DATA{

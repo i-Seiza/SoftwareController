@@ -8,6 +8,7 @@
 
 #include "FileIO.h"
 #include "Argument.h"
+#include "Clipboard.h"
 
 int _tmain(int argc, TCHAR* argv[], TCHAR* envp[])
 {

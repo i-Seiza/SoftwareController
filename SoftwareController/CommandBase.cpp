@@ -4,12 +4,15 @@
 #include "FileIO.h"
 #include "Inifile.h"
 
+#include "Clipboard.h"
+
+#include<boost/format.hpp>
 
 CommandBase::CommandBase()
 {
 	path.reset(new PathCommand(_T("")));
 	main.reset(new MainCommand(_T("")));
-	close.reset(new CloseCommand(GetResultFile()));
+	result.reset(new ResultCommand(GetResultFile()));
 }
 
 
@@ -20,7 +23,7 @@ CommandBase::~CommandBase()
 /*
 結果ファイルは実行ファイルと同じフォルダに配置する
 */
-tstring CommandBase::GetResultFile() const
+tstring ExecuteBase::GetResultFile() const
 {
 	tstring name;
 	CInifile ini;
@@ -33,9 +36,12 @@ tstring CommandBase::GetResultFile() const
 // 結果ファイルを開く
 bool CommandBase::OpenResultFile()
 {
-	// サクラエディタで開く
-	::ShellExecute(nullptr, nullptr, _T("sakura"), GetResultFile().c_str(), nullptr, SW_NORMAL);
-	return false;
+	if (result.get()->GetCommand().size())
+	{
+		// サクラエディタで開く
+		::ShellExecute(nullptr, nullptr, _T("sakura"), GetResultFile().c_str(), nullptr, SW_NORMAL);
+	}
+	return true;
 }
 
 // コマンド実行
@@ -68,7 +74,7 @@ tstring CommandBase::GetCommand()
 	tstring command;
 	command.append(path->GetCommand());
 	command.append(main->GetCommand());
-	command.append(close->GetCommand());
+	command.append(result->GetCommand());
 	return command;
 }
 
@@ -90,4 +96,40 @@ _E_ERROR CommandBase::Execute(const _TCHAR * sContents, std::vector<tstring> arg
 	//std::vector<tstring> re = io.Read(GetResultFile().c_str());
 	OpenResultFile();
 	return _E_NOERROR;
+}
+
+_E_ERROR ExecuteClipboad::Execute(const _TCHAR * sContents, std::vector<tstring> argv)
+{
+#if UNICODE
+	std::wregex re;
+	std::wsmatch result;
+#else
+	std::regex re;
+	std::smatch result;
+#endif
+
+	CInifile ini;
+	ini.ReadInifile(argv.at(1).c_str(), _T("clipboard"), _T(""));
+	if (!ini.IsSccuess())	return _E_NO_KEY;
+	tstring ClipTemplate = ini.GetContents();
+
+	ini.ReadInifile(argv.at(1).c_str(), _T("regex"), _T(""));
+	if (!ini.IsSccuess())	return _E_NO_KEY;
+	re = ini.GetContents();
+
+
+	CFileIO io;
+	std::vector<tstring> contents = io.Read(GetResultFile().c_str());
+	
+	for (auto content : contents)
+	{
+		if (std::regex_match(content, result, re))
+		{
+			tstring str = (boost::wformat(ClipTemplate) % result.str(1)).str();
+			Clipboard clip;
+			clip.set(str);
+		}
+	}
+
+	return _E_ERROR();
 }
